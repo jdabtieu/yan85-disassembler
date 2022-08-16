@@ -3,6 +3,8 @@ Decompiles basic yan85 VM instructions into x64-like NASM Assembly.
 
 This disassembler does not work for the "full yan85" levels. A disassembler for that is being worked on.
 
+Usage: `python[3] yan85decompile.py <filename>`
+
 ## List of valid challenges
 - babyrev 12.0
 - babyrev 12.1
