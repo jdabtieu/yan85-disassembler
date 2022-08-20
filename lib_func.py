@@ -345,6 +345,7 @@ def find_well_known_funcs(cur_func, cur_func_start, well_known_funcs, file):
         VM_jumps[VM_jumps["je"] | VM_jumps["jg"]] = "jge"
         VM_jumps["jle"] = VM_jumps["je"] | VM_jumps["jl"]
         VM_jumps[VM_jumps["je"] | VM_jumps["jl"]] = "jle"
+        VM_jumps[VM_jumps["jg"] | VM_jumps["jl"]] = "jne"
         
         # Back to regular execution
         well_known_funcs['interpret_cmp'] = cur_func_start
@@ -421,6 +422,48 @@ def find_well_known_funcs(cur_func, cur_func_start, well_known_funcs, file):
                 cur_func.append((f'{syscall_num}\tsys_exit\n', 0))
         return True, None
     
+    # void interpret_instruction(int inst)
+    for i in range(1):
+        if len(cur_func) < 112 or len(cur_func) > 120:
+            break
+        if len(calls) < 8: break
+        if ("interpret_imm" not in calls or
+            "interpret_add" not in calls or
+            "interpret_stk" not in calls or
+            "interpret_stm" not in calls or
+            "interpret_ldm" not in calls or
+            "interpret_cmp" not in calls or
+            "interpret_jmp" not in calls or
+            "interpret_sys" not in calls):
+                break
+        if cur_func[-1][0] != 'ret': break
+        # Determine keys
+        for i in range(len(cur_func)):
+            if not cur_func[i][0].startswith("call interpret_"): continue
+            for j in range(i - 1, 0, -1):
+                if cur_func[j][0].startswith("and"):
+                    key = int(cur_func[j][0].split(", ")[1])
+                    break
+                if cur_func[j][0].startswith("jns"):
+                    key = 0x80
+                    break
+            func_name = cur_func[i][0].split("call ")[1]
+            VM_inst[key] = func_name
+            VM_inst[func_name] = key
+        
+        # Back to regular execution
+        well_known_funcs['interpret_instruction'] = cur_func_start
+        well_known_funcs[cur_func_start] = 'interpret_instruction'
+        print('void interpret_instruction(int inst):')
+        cur_func.clear()
+        cur_func.append(('[arg2][opcode][arg1] where [] = 8 bits', 0))
+        for opcode, name in VM_inst.items():
+            if type(opcode) != int:
+                continue
+            cur_func.append((f"{hex(opcode)}:\t{name}", 0))
+        cur_func.append(("\n", 0))
+        return True, None
+    
     # void execute_program()
     for i in range(1):
         if len(cur_func) < 200:
@@ -433,6 +476,37 @@ def find_well_known_funcs(cur_func, cur_func_start, well_known_funcs, file):
         cur_func[0] = (cur_func[0][0], 0)
         return True, None
     
+    # void interpreter_loop()
+    for i in range(1):
+        if len(cur_func) < 28 or len(cur_func) > 38:
+            break
+        if len(calls) > 2 or len(calls) == 0: break
+        if calls[-1] != 'interpret_instruction': break
+        if not cur_func[-1][0].startswith('jmp'): break
+        well_known_funcs['interpreter_loop'] = cur_func_start
+        well_known_funcs[cur_func_start] = 'interpreter_loop'
+        print('void interpreter_loop():')
+        cur_func.clear()
+        cur_func.append(('loops through instructions stored in memory\n', 0))
+        return True, None
+    
+    # int main(int argc, char **argv)
+    for i in range(1):
+        if len(calls) < 1 or calls[-1] != 'memcpy': break
+        if cur_func[-1][0] != 'call memcpy': break
+        well_known_funcs['main'] = cur_func_start
+        well_known_funcs[cur_func_start] = 'main'
+        global VM_code
+        global VM_code_len
+        for i in range(len(cur_func) - 1, 0, -1):
+            if VM_code_len != -1 and VM_code != -1: break
+            if VM_code == -1 and cur_func[i][0].startswith('lea rsi'):
+                VM_code = int(cur_func[i][0].split('[')[1][:-1], 16)
+            if VM_code_len == -1 and cur_func[i][0].startswith('mov eax, dword'):
+                VM_code_len = int(cur_func[i][0].split('[')[1][:-1], 16)
+        cur_func.clear()
+        return True, None
+    
     return False, 0
 
 VM_jumps = {0: 'jmp'} # others filled in with interpret_cmp
@@ -440,6 +514,12 @@ VM_jumps = {0: 'jmp'} # others filled in with interpret_cmp
 VM_syscalls = {} # filled in with interpret_sys
 
 VM_regs = {} # filled in with interpret_imm
+
+VM_inst = {} # filled in with interpret_instruction
+
+# filled in with main
+VM_code_len = -1
+VM_code = -1
 
 def replace_addr_with_func_name(call, well_known_funcs):
     if re.fullmatch('call 0x[0-9a-f]+', call) is None:

@@ -1,16 +1,16 @@
 import sys
 import subprocess
 
+from readyan import disassemble_full
 from instructions import known_instructions
-from lib_func import (find_well_known_funcs, replace_addr_with_func_name,
-                      find_libc_funcs, VM_syscalls, VM_jumps, VM_regs)
+from lib_func import *
+import lib_func
 
 if len(sys.argv) != 2:
     print("Usage: python[3] yan85decompile.py <filename>")
     sys.exit(-1)
 
 f = open(sys.argv[1], "rb")
-
 
 
 cur = b""
@@ -56,8 +56,14 @@ while True:
         f.seek(seek)
     cur = b""
     start = f.tell()
+    # Found VM_code, time to disassemble
+    if lib_func.VM_code != -1:
+        print("[i] Detected: Full yan85 emulation")
+        disassemble_full(cur_func, lib_func.VM_code, lib_func.VM_code_len, f)
+        sys.exit(0)
     # Found execute_program, time to disassemble
     if "execute_program" in well_known_funcs:
+        print("[i] Detected: Basic yan85 emulation")
         break
   if len(cur) > 10:
     print(f"Aborting: unrecognized instruction at offset {hex(f.tell()-len(cur))}")
