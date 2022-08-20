@@ -91,6 +91,17 @@ x86_and_r_imm8 = {
     b'\x41\xe7': 'r15d',
 }
 
+x64_shl_r_imm8 = {
+    b'\xe0': 'rax',
+    b'\xe1': 'rcx',
+    b'\xe2': 'rdx',
+    b'\xe3': 'rbx',
+    b'\xe4': 'rsp',
+    b'\xe5': 'rbp',
+    b'\xe6': 'rsi',
+    b'\xe7': 'rdi',
+}
+
 def endbr64(file, cur):
     """
     f3 0f
@@ -149,6 +160,16 @@ def add_r64_r64(file, cur):
     reg = file.read(1)
     return 'add ' + x64_r_r[reg]
 known_instructions[b'\x48\x01'] = add_r64_r64
+
+def add_r64_imm8(file, cur):
+    """
+    48 83 RR
+    """
+    x = unpack("<b", file.read(1))[0]
+    reg = x64_r_r[cur[2].to_bytes(1, 'little')].split(',')[0]
+    return f'add {reg}, {x}'
+for i in range(0xc0, 0xc8):
+    known_instructions[b'\x48\x83' + i.to_bytes(1, 'little')] = add_r64_imm8
 
 def and_al_rbp_relbyte_byte(file, cur):
     """
@@ -348,6 +369,21 @@ def mov_rax_qword_rel_rip(file, cur):
     return f'mov rax, qword [{hex(x+file.tell())}]'
 known_instructions[b'\x48\x8b\x05'] = mov_rax_qword_rel_rip
 
+def mov_eax_dword_rel_rip(file, cur):
+    """
+    8b 05
+    """
+    x = unpack('<i', file.read(4))[0]
+    return f'mov eax, dword [{hex(x+file.tell())}]'
+known_instructions[b'\x8b\x05'] = mov_eax_dword_rel_rip
+
+def mov_rax_qword_rax(file, cur):
+    """
+    48 8b 00
+    """
+    return f'mov rax, qword [rax]'
+known_instructions[b'\x48\x8b\x00'] = mov_rax_qword_rax
+
 def mov_eax_dword_rbp_relbyte(file, cur):
     """
     8b 45
@@ -424,13 +460,38 @@ def mov_rbp_relbyte_m32_imm32(file, cur):
     return ret
 known_instructions[b'\xc7\x45'] = mov_rbp_relbyte_m32_imm32
 
-def mov_r32_r32(file, cur):
+def mov_rm32_r32(file, cur):
     """
     89
     """
     reg = file.read(1)
-    return 'mov ' + x86_r_r[reg]
-known_instructions[b'\x89'] = mov_r32_r32
+    if reg in x86_r_r:
+        return 'mov ' + x86_r_r[reg]
+    if reg == b'\xbd':
+        return mov_rbp_reldword_m32_edi(file, cur)
+    if reg == b'\x02':
+        return mov_m32_rdx_eax(file, cur)
+    raise KeyError()
+known_instructions[b'\x89'] = mov_rm32_r32
+
+def mov_rbp_reldword_m32_edi(file, cur):
+    """
+    89 bd
+    """
+    x = unpack("<i", file.read(4))[0]
+    ret = 'mov dword [rbp'
+    if x > 0:
+        ret += '+' + hex(x)
+    elif x < 0:
+        ret += '-' + hex(-x)
+    ret += '], edi'
+    return ret
+
+def mov_m32_rdx_eax(file, cur):
+    """
+    89 02
+    """
+    return 'mov dword [rdx], eax'
 
 def mov_rm64_r64(file, cur):
     """
@@ -445,6 +506,8 @@ def mov_rm64_r64(file, cur):
         return mov_rbp_relbyte_m64_rax(file, cur)
     if reg == b'\x75':
         return mov_rbp_relbyte_m64_rsi(file, cur)
+    if reg == b'\xb5':
+        return mov_rbp_reldword_m64_rsi(file, cur)
     raise KeyError()
 known_instructions[b'\x48\x89'] = mov_rm64_r64
 
@@ -474,6 +537,19 @@ def mov_rbp_relbyte_m64_rsi(file, cur):
     ret += '], rsi'
     return ret
 
+def mov_rbp_reldword_m64_rsi(file, cur):
+    """
+    48 89 b5
+    """
+    x = unpack("<i", file.read(4))[0]
+    ret = 'mov qword [rbp'
+    if x > 0:
+        ret += '+' + hex(x)
+    elif x < 0:
+        ret += '-' + hex(-x)
+    ret += '], rsi'
+    return ret
+
 def mov_rbp_relbyte_m64_rax(file, cur):
     """
     48 89 45
@@ -487,29 +563,30 @@ def mov_rbp_relbyte_m64_rax(file, cur):
     ret += '], rax'
     return ret
 
-x64_mov_r_qword_relbyte_rbp = {
-    b'\x45': 'rax',
-    b'\x4d': 'rcx',
-    b'\x55': 'rdx',
-    b'\x5d': 'rbx',
-    b'\x75': 'rsi',
+x64_mov_r_qword_rel_rbp = {
+    b'\x45': ('rax', '<b', 1),
+    b'\x4d': ('rcx', '<b', 1),
+    b'\x55': ('rdx', '<b', 1),
+    b'\x5d': ('rbx', '<b', 1),
+    b'\x75': ('rsi', '<b', 1),
+    b'\x85': ('rsi', '<i', 4),
 }
-def mov_r64_rbp_relbyte_m64(file, cur):
+def mov_r64_rbp_rel_m64(file, cur):
     """
     48 8b RR
     For RR, see above dict
     """
-    reg = x64_mov_r_qword_relbyte_rbp[cur[2].to_bytes(1, 'little')]
-    x = unpack("<b", file.read(1))[0]
-    ret = f'mov {reg}, qword [rbp'
+    reg = x64_mov_r_qword_rel_rbp[cur[2].to_bytes(1, 'little')]
+    x = unpack(reg[1], file.read(reg[2]))[0]
+    ret = f'mov {reg[0]}, qword [rbp'
     if x > 0:
         ret += '+' + hex(x)
     elif x < 0:
         ret += '-' + hex(-x)
     ret += ']'
     return ret
-for key, value in x64_mov_r_qword_relbyte_rbp.items():
-    known_instructions[b'\x48\x8b' + key] = mov_r64_rbp_relbyte_m64
+for key, value in x64_mov_r_qword_rel_rbp.items():
+    known_instructions[b'\x48\x8b' + key] = mov_r64_rbp_rel_m64
 
 x8_mov_rbp = {
     b'\x45': 'al',
@@ -534,19 +611,25 @@ def mov_rbp_relbyte(file, cur):
 for key, value in x8_mov_rbp.items():
     known_instructions[b'\x88' + key] = mov_rbp_relbyte
 
-def mov_mem_reldword_rax_dl(file, cur):
+x64_mov_mem_reldword_r64_r8 = {
+    b'\x90': ('rax', 'dl'),
+    b'\x8a': ('rdx', 'cl'),
+}
+def mov_mem_reldword_r64_r8(file, cur):
     """
-    88 90
+    88 RR
     """
+    regs = x64_mov_mem_reldword_r64_r8[cur[1].to_bytes(1, 'little')]
     x = unpack("<i", file.read(4))[0]
-    ret = 'mov byte [rax'
+    ret = f'mov byte [{regs[0]}'
     if x > 0:
         ret += '+' + hex(x)
     elif x < 0:
         ret += '-' + hex(-x)
-    ret += '], dl'
+    ret += f'], {regs[1]}'
     return ret
-known_instructions[b'\x88\x90'] = mov_mem_reldword_rax_dl
+for opcode, reg in x64_mov_mem_reldword_r64_r8.items():
+    known_instructions[b'\x88' + opcode] = mov_mem_reldword_r64_r8
 
 def mov_mem_reldword_rdx_al(file, cur):
     """
@@ -562,28 +645,57 @@ def mov_mem_reldword_rdx_al(file, cur):
     return ret
 known_instructions[b'\x88\x82'] = mov_mem_reldword_rdx_al
 
-x32_movzx_rbp = {
-    b'\x45': 'eax',
-    b'\x4d': 'ecx',
-    b'\x55': 'edx',
-    b'\x5d': 'ebx',
+def mov_byte_rdx_al(file, cur):
+    """
+    88 02
+    """
+    return 'mov byte[rdx], al'
+known_instructions[b'\x88\x02'] = mov_byte_rdx_al
+
+def mov_rbp_relbyte_dx(file, cur):
+    """
+    66 89 55
+    """
+    x = unpack("<b", file.read(1))[0]
+    ret = 'mov word [rbp'
+    if x > 0:
+        ret += '+' + hex(x)
+    elif x < 0:
+        ret += '-' + hex(-x)
+    ret += '], dx'
+    return ret
+known_instructions[b'\x66\x89\x55'] = mov_rbp_relbyte_dx
+
+def mov_word_rdx_ax(file, cur):
+    """
+    66 89 02
+    """
+    return 'mov word [rdx], ax'
+known_instructions[b'\x66\x89\x02'] = mov_word_rdx_ax
+
+x32_movzx_r64 = {
+    b'\x40': ('eax', 'rax'),
+    b'\x45': ('eax', 'rbp'),
+    b'\x4d': ('ecx', 'rbp'),
+    b'\x55': ('edx', 'rbp'),
+    b'\x5d': ('ebx', 'rbp'),
 }
-def movzx_r32_rbp_relbyte_m8(file, cur):
+def movzx_r32_r64_relbyte_m8(file, cur):
     """
     0f b6 RR
     For RR, see above dict
     """
-    reg = x32_movzx_rbp[cur[2].to_bytes(1, 'little')]
+    reg = x32_movzx_r64[cur[2].to_bytes(1, 'little')]
     x = unpack("<b", file.read(1))[0]
-    ret = f'movzx {reg}, byte [rbp'
+    ret = f'movzx {reg[0]}, byte [{reg[1]}'
     if x > 0:
         ret += '+' + hex(x)
     elif x < 0:
         ret += '-' + hex(-x)
     ret += ']'
     return ret
-for key, value in x32_movzx_rbp.items():
-    known_instructions[b'\x0f\xb6' + key] = movzx_r32_rbp_relbyte_m8
+for key, value in x32_movzx_r64.items():
+    known_instructions[b'\x0f\xb6' + key] = movzx_r32_r64_relbyte_m8
 
 def movzx_eax_mem_rdx_plus_rax(file, cur):
     """
@@ -681,12 +793,28 @@ def movzx_Hr32_r8(file, cur):
 for key, value in x8H_movzx_eax.items():
     known_instructions[b'\x44\x0f\xb6' + key] = movzx_Hr32_r8
 
+def movzx_edx_word_ptr_rax(file, cur):
+    """
+    0f b7 10
+    """
+    return 'movzx edx, word [rax]'
+known_instructions[b'\x0f\xb7\x10'] = movzx_edx_word_ptr_rax
+
 def movsxd_rdx_eax(file, cur):
     """
     48 63 d0
     """
     return 'movsxd rdx, eax'
 known_instructions[b'\x48\x63\xd0'] = movsxd_rdx_eax
+
+def or_r64_r64(file, cur):
+    """
+    48 09 RR
+    """
+    regs = x64_r_r[cur[2].to_bytes(1, 'little')]
+    return f'or {regs}'
+for opcode, reg in x64_r_r.items():
+    known_instructions[b'\x48\x09' + opcode] = or_r64_r64
 
 def or_eax_imm8(file, cur):
     """
@@ -695,6 +823,16 @@ def or_eax_imm8(file, cur):
     x = unpack("<b", file.read(1))[0]
     return f'or eax, {hex(x)}'
 known_instructions[b'\x83\xc8'] = or_eax_imm8
+
+def shl_r64_imm8(file, cur):
+    """
+    48 c1 RR
+    """
+    reg = x64_shl_r_imm8[cur[2].to_bytes(1, 'little')]
+    x = unpack("<B", file.read(1))[0]
+    return f'shl {reg}, {x}'
+for opcode, reg in x64_shl_r_imm8.items():
+    known_instructions[b'\x48\xc1' + opcode] = shl_r64_imm8
 
 def sub_r32_r32(file, cur):
     """
@@ -840,8 +978,11 @@ x64_lea_rel = {
     b'\x05': ('rax', 'rip'),
     b'\x0d': ('rcx', 'rip'),
     b'\x15': ('rdx', 'rip'),
+    b'\x35': ('rsi', 'rip'),
     b'\x3d': ('rdi', 'rip'),
+    b'\x85': ('rax', 'rbp'),
     b'\x90': ('rdx', 'rax'),
+    b'\x95': ('rdx', 'rbp'),
     b'\xb1': ('rsi', 'rcx'),
 }
 def lea_r64_rel_imm32(file, cur):
@@ -854,22 +995,31 @@ def lea_r64_rel_imm32(file, cur):
     if regs[1] == 'rip':
         return f'lea {regs[0]}, [{hex(x+file.tell())}]'
     else:
-        return f'lea {regs[0]}, [{regs[1]}+{hex(x)}]'
+        if x > 0:
+            return f'lea {regs[0]}, [{regs[1]}+{hex(x)}]'
+        else:
+            return f'lea {regs[0]}, [{regs[1]}-{hex(-x)}]'
 known_instructions[b'\x48\x8d'] = lea_r64_rel_imm32
 
-def lea_edx_rax_plus_byteoffset(file, cur):
+x86_lea_r32_rax_plus_byteoffset = {
+    b'\x50': 'edx',
+    b'\x48': 'ecx',
+}
+def lea_r32_rax_plus_byteoffset(file, cur):
     """
-    8d 50
+    8d RR
     """
+    reg = x86_lea_r32_rax_plus_byteoffset[cur[1].to_bytes(1, 'little')]
     x = unpack('<b', file.read(1))[0]
-    ret = 'lea edx, [rax'
+    ret = f'lea edx, [{reg}'
     if x > 0:
         ret += '+' + hex(x)
     elif x < 0:
         ret += '-' + hex(-x)
     ret += ']'
     return ret
-known_instructions[b'\x8d\x50'] = lea_edx_rax_plus_byteoffset
+for opcode, reg in x86_lea_r32_rax_plus_byteoffset.items():
+    known_instructions[b'\x8d' + opcode] = lea_r32_rax_plus_byteoffset
 
 def hlt(file, cur):
     """
@@ -877,3 +1027,17 @@ def hlt(file, cur):
     """
     return 'hlt'
 known_instructions[b'\xf4'] = hlt
+
+def mov_rax_qword_fs_0x28(file, cur):
+    """
+    64 48 8b 04 25 28 00 00 00
+    """
+    return 'mov rax, stack_canary (qword fs:0x28)'
+known_instructions[b'\x64\x48\x8b\x04\x25\x28\x00\x00\x00'] = mov_rax_qword_fs_0x28
+
+def rep_stos_qword_es_rdi_rax(file, cur):
+    """
+    f3 48 ab
+    """
+    return 'rep stos qword es:[rdi], rax'
+known_instructions[b'\xf3\x48\xab'] = rep_stos_qword_es_rdi_rax
