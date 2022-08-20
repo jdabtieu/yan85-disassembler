@@ -1,11 +1,11 @@
 # yan85 disassembler
-Decompiles basic yan85 VM instructions into x64-like NASM Assembly.
+Decompiles yan85 VM instructions into x64-like NASM Assembly.
 
-This disassembler does not work for the "full yan85" levels. A disassembler for that is being worked on.
+This disassembler supports both the "basic" and "full" yan85 emulation levels, but is only fully tested for the levels listed below.
 
 Usage: `python[3] yan85decompile.py <filename>`
 
-## List of valid challenges
+## List of tested and valid challenges
 - babyrev 12.0
 - babyrev 12.1
 - babyrev 13.0
@@ -14,6 +14,7 @@ Usage: `python[3] yan85decompile.py <filename>`
 - babyrev 14.1
 - babyrev 15.0
 - babyrev 15.1
+- babyrev 16.0
 
 # Issues
 This disassembler also disassembles some x64 instructions, to figure out the stripped binaries (challenges ending in .1).
