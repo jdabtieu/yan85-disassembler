@@ -26,11 +26,14 @@ It only contains the opcodes necessary to disassemble the provided binaries, and
 
 Please submit an issue in the Issue tab, along with the full traceback if printed and the binary (`objdump -M intel -d` of the binary works too)
 
+## Known Issues
+- The disassembler does not work for all full yan85 levels because the opcodes are randomized
+
 # Cheating?
 If you work at ASU and would like me to take down this repo, please submit an issue stating so and I will remove it.
 
 # The yan85 architecture
-The architecture does not specify an exact bit/byte offset for registers and flags, so the ~~very evil~~ problem setters randomize these offsets between different challenges, meaning that they need to be manually located in each binary.
+The architecture does not specify an exact bit/byte offset for registers and flags, so the ~~very evil~~ problem setters randomize these offsets between different challenges, meaning that they need to be manually located in each binary. In addition, even the opcodes themselves are not fixed, meaning that depending on the challenge, opcodes can be in the order `[arg1][inst][arg2]`, or something else, like `[arg2][inst][arg1]`.
 ## Registers
 yan85 registers are 1 byte long, so for most registers, they can only store byte values. This means that the stack is at most 256 bytes long.
 | Binary Name | Name   | Description                             | x64 equivalent |
