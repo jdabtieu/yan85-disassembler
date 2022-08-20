@@ -31,7 +31,7 @@ If you work at ASU and would like me to take down this repo, please submit an is
 # The yan85 architecture
 The architecture does not specify an exact bit/byte offset for registers and flags, so the ~~very evil~~ problem setters randomize these offsets between different challenges, meaning that they need to be manually located in each binary.
 ## Registers
-yan85 registers are 1 byte long, so for most registers, they can only store byte values. However, the stack can be more than 256 bytes long.
+yan85 registers are 1 byte long, so for most registers, they can only store byte values. This means that the stack is at most 256 bytes long.
 | Binary Name | Name   | Description                             | x64 equivalent |
 |-------------|--------|-----------------------------------------|----------------|
 | a           | ya     | General purpose register                | rax            |
