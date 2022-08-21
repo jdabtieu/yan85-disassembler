@@ -29,8 +29,7 @@ def find_well_known_funcs(cur_func, cur_func_start, well_known_funcs, file):
         # Found _start, find main
         well_known_funcs['_start'] = cur_func_start
         well_known_funcs[cur_func_start] = '_start'
-        print('void _start():')
-        cur_func[0] = ('endbr64', 0)
+        print('[i] Function _start: ' + hex(cur_func_start))
         for ip in cur_func:
             inst = ip[0]
             if inst.startswith("lea rdi, "):
@@ -48,6 +47,7 @@ def find_well_known_funcs(cur_func, cur_func_start, well_known_funcs, file):
                     queue.pop(0)
                     queue.append(unpack('<B', file.read(1))[0])
                 file.seek(file.tell()-4)
+                cur_func.clear()
                 return True, None
     
     # void crash(char *msg)
@@ -64,10 +64,8 @@ def find_well_known_funcs(cur_func, cur_func_start, well_known_funcs, file):
             break
         well_known_funcs['crash'] = cur_func_start
         well_known_funcs[cur_func_start] = 'crash'
-        print('void crash(char *msg):')
+        print('[i] Function VM_crash: ' + hex(cur_func_start))
         cur_func.clear()
-        cur_func.append(('printf("Machine CRASHED due to: %s\\n", msg);', 0))
-        cur_func.append(('exit(1);\n', 0))
         return True, None
     
     # char *describe_register(byte id)
@@ -85,9 +83,8 @@ def find_well_known_funcs(cur_func, cur_func_start, well_known_funcs, file):
             break
         well_known_funcs['describe_register'] = cur_func_start
         well_known_funcs[cur_func_start] = 'describe_register'
-        print('char *describe_register(byte REGISTER_ID):')
+        print('[i] Function describe_register: ' + hex(cur_func_start))
         cur_func.clear()
-        cur_func.append(('Don\'t rely on this, it doesn\'t exist in the stripped binaries', 0))
         return True, None
         
     # byte read_register(byte REGISTER_ID)
@@ -105,11 +102,8 @@ def find_well_known_funcs(cur_func, cur_func_start, well_known_funcs, file):
             break
         well_known_funcs['read_register'] = cur_func_start
         well_known_funcs[cur_func_start] = 'read_register'
-        print('byte read_register(byte REGISTER_ID):')
+        print('[i] Function read_register: ' + hex(cur_func_start))
         cur_func.clear()
-        cur_func.append(('reg <-- REGISTER_ID', 0))
-        cur_func.append(('return reg', 0))
-        cur_func.append(('unknown  id --> crash()\n', 0))
         return True, None
     
     # void write_register(byte REGISTER_ID, byte val)
@@ -137,12 +131,8 @@ def find_well_known_funcs(cur_func, cur_func_start, well_known_funcs, file):
         # Back to normal decoding
         well_known_funcs['write_register'] = cur_func_start
         well_known_funcs[cur_func_start] = 'write_register'
-        print('void write_register(byte REGISTER_ID, byte val):')
+        print('[i] Function write_register: ' + hex(cur_func_start))
         cur_func.clear()
-        cur_func.append(('reg <-- REGISTER_ID', 0))
-        cur_func.append(('$reg = val; AKA', 0))
-        cur_func.append(('mov reg, val', 0))
-        cur_func.append(('unknown  id --> crash()\n', 0))
         return True, None
         
     # byte read_memory(byte addr)
@@ -159,10 +149,8 @@ def find_well_known_funcs(cur_func, cur_func_start, well_known_funcs, file):
             break
         well_known_funcs['read_memory'] = cur_func_start
         well_known_funcs[cur_func_start] = 'read_memory'
-        print('byte read_memory(byte addr):')
+        print('[i] Function read_memory: ' + hex(cur_func_start))
         cur_func.clear()
-        cur_func.append(('return stack[addr]; AKA', 0))
-        cur_func.append(('movzx eax, byte [addr]\n', 0))
         return True, None
         
     # void write_memory(byte addr, byte val)
@@ -180,10 +168,8 @@ def find_well_known_funcs(cur_func, cur_func_start, well_known_funcs, file):
             break
         well_known_funcs['write_memory'] = cur_func_start
         well_known_funcs[cur_func_start] = 'write_memory'
-        print('void write_memory(byte addr, byte val):')
+        print('[i] Function write_memory: ' + hex(cur_func_start))
         cur_func.clear()
-        cur_func.append(('stack[addr] = val; AKA', 0))
-        cur_func.append(('mov byte [rdi], sil\n', 0))
         return True, None
     
     # void interpret_imm(byte REGISTER_ID, byte val)
@@ -198,6 +184,8 @@ def find_well_known_funcs(cur_func, cur_func_start, well_known_funcs, file):
         if "read_register" in calls or "read_memory" in calls or "write_memory" in calls:
             break
         if cur_func[-1][0] != 'ret': break
+        global VM_interpret_imm # important for getting opcodes
+        VM_interpret_imm = cur_func.copy()
         well_known_funcs['interpret_imm'] = cur_func_start
         well_known_funcs[cur_func_start] = 'interpret_imm'
         print('void interpret_imm(byte REGISTER_ID, byte val):')
@@ -260,7 +248,7 @@ def find_well_known_funcs(cur_func, cur_func_start, well_known_funcs, file):
         
     # void interpret_stm(byte REGISTER_ID1, byte REGISTER_ID2)
     for i in range(1):
-        if len(cur_func) < 32 or len(cur_func) > 48:
+        if len(cur_func) < 30 or len(cur_func) > 48:
             break
         if len(calls) != 6 and len(calls) != 3: break
         # V1: desc*2, printf, read_r*2, write_m
@@ -283,7 +271,7 @@ def find_well_known_funcs(cur_func, cur_func_start, well_known_funcs, file):
     
     # void interpret_ldm(byte REGISTER_ID1, byte REGISTER_ID2)
     for i in range(1):
-        if len(cur_func) < 28 or len(cur_func) > 48:
+        if len(cur_func) < 26 or len(cur_func) > 48:
             break
         if len(calls) != 6 and len(calls) != 3: break
         # V1: desc*2, printf, read_r, read_m, write_m
@@ -424,7 +412,7 @@ def find_well_known_funcs(cur_func, cur_func_start, well_known_funcs, file):
     
     # void interpret_instruction(int inst)
     for i in range(1):
-        if len(cur_func) < 112 or len(cur_func) > 120:
+        if len(cur_func) < 78 or len(cur_func) > 120:
             break
         if len(calls) < 8: break
         if ("interpret_imm" not in calls or
@@ -493,17 +481,19 @@ def find_well_known_funcs(cur_func, cur_func_start, well_known_funcs, file):
     # int main(int argc, char **argv)
     for i in range(1):
         if len(calls) < 1 or calls[-1] != 'memcpy': break
-        if cur_func[-1][0] != 'call memcpy': break
+        if cur_func[-2][0] != 'call memcpy': break
         well_known_funcs['main'] = cur_func_start
         well_known_funcs[cur_func_start] = 'main'
         global VM_code
         global VM_code_len
+        global VM_mem
         for i in range(len(cur_func) - 1, 0, -1):
             if VM_code_len != -1 and VM_code != -1: break
             if VM_code == -1 and cur_func[i][0].startswith('lea rsi'):
                 VM_code = int(cur_func[i][0].split('[')[1][:-1], 16)
             if VM_code_len == -1 and cur_func[i][0].startswith('mov eax, dword'):
                 VM_code_len = int(cur_func[i][0].split('[')[1][:-1], 16)
+        VM_mem = int(cur_func[-1][0].split('[')[1][:-1], 16)
         cur_func.clear()
         return True, None
     
@@ -517,9 +507,14 @@ VM_regs = {} # filled in with interpret_imm
 
 VM_inst = {} # filled in with interpret_instruction
 
+VM_interpret_imm = {} # find opcode layout, for full emulator
+
+elf = None # the elf file
+
 # filled in with main
 VM_code_len = -1
 VM_code = -1
+VM_mem = -1
 
 def replace_addr_with_func_name(call, well_known_funcs):
     if re.fullmatch('call 0x[0-9a-f]+', call) is None:
@@ -624,6 +619,7 @@ def parse_libc_funcs(file, elf, well_known_funcs):
         file.seek(cur_pos)
 
 def find_libc_funcs(file, well_known_funcs):
+    global elf
     elf = parse_elf_header(file)
     find_shstrtab(file, elf)
     find_sections(file, elf)

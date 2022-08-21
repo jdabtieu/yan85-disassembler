@@ -59,7 +59,7 @@ while True:
     # Found VM_code, time to disassemble
     if lib_func.VM_code != -1:
         print("[i] Detected: Full yan85 emulation")
-        disassemble_full(cur_func, lib_func.VM_code, lib_func.VM_code_len, f)
+        disassemble_full(cur_func, lib_func.VM_code, lib_func.VM_code_len, lib_func.VM_mem, f)
         sys.exit(0)
     # Found execute_program, time to disassemble
     if "execute_program" in well_known_funcs:

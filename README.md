@@ -14,6 +14,9 @@ Usage: `python[3] yan85decompile.py <filename>`
 - babyrev 14.1
 - babyrev 15.0
 - babyrev 15.1
+- babyrev 16.0
+- babyrev 16.1
+- babyrev 17.0
 
 # Issues
 This disassembler also disassembles some x64 instructions, to figure out the stripped binaries (challenges ending in .1).
