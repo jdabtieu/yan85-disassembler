@@ -1,0 +1,227 @@
+     0x0: Y_mov yb, 0xd3
+     0x1: Y_mov yip, yb
+     0x2: Y_mov yb, 0xca
+     0x3: Y_mov yc, 0xa
+     0x4: Y_mov ya, 0x1
+     0x5: Y_sys [sys_write] --> yd
+     0x6: Y_mov ya, 0x1
+     0x7: Y_sys [sys_exit]
+     0x8: Y_mov yb, 0xae
+     0x9: Y_mov yc, 0x1c
+     0xa: Y_mov ya, 0x1
+     0xb: Y_sys [sys_write] --> yd
+     0xc: Y_mov ya, 0xd9
+     0xd: Y_mov yb, 0x0
+     0xe: Y_sys [sys_open] --> yd
+     0xf: Y_mov yb, 0x0
+    0x10: Y_add yb, ystk
+    0x11: Y_mov yc, 0xff
+    0x12: Y_mov ya, 0x0
+    0x13: Y_add ya, yd
+    0x14: Y_sys [sys_read] --> yd
+    0x15: Y_mov yb, 0x0
+    0x16: Y_add yb, ystk
+    0x17: Y_mov yc, 0x0
+    0x18: Y_add yc, yd
+    0x19: Y_mov ya, 0x1
+    0x1a: Y_sys [sys_write] --> yd
+    0x1b: Y_mov ya, 0x0
+    0x1c: Y_sys [sys_exit]
+    0x1d: Y_push ya
+    0x1e: Y_push yb
+    0x1f: Y_push yc
+    0x20: Y_mov ya, 0x30
+    0x21: Y_mov yc, 0xa7
+    0x22: Y_mov yb, byte [ya]
+    0x23: Y_add yb, yc
+    0x24: Y_mov byte [ya], yb
+    0x25: Y_mov ya, 0x31
+    0x26: Y_mov yc, 0x90
+    0x27: Y_mov yb, byte [ya]
+    0x28: Y_add yb, yc
+    0x29: Y_mov byte [ya], yb
+    0x2a: Y_mov ya, 0x32
+    0x2b: Y_mov yc, 0x11
+    0x2c: Y_mov yb, byte [ya]
+    0x2d: Y_add yb, yc
+    0x2e: Y_mov byte [ya], yb
+    0x2f: Y_mov ya, 0x33
+    0x30: Y_mov yc, 0x7d
+    0x31: Y_mov yb, byte [ya]
+    0x32: Y_add yb, yc
+    0x33: Y_mov byte [ya], yb
+    0x34: Y_mov ya, 0x34
+    0x35: Y_mov yc, 0x83
+    0x36: Y_mov yb, byte [ya]
+    0x37: Y_add yb, yc
+    0x38: Y_mov byte [ya], yb
+    0x39: Y_mov ya, 0x35
+    0x3a: Y_mov yc, 0x20
+    0x3b: Y_mov yb, byte [ya]
+    0x3c: Y_add yb, yc
+    0x3d: Y_mov byte [ya], yb
+    0x3e: Y_mov ya, 0x36
+    0x3f: Y_mov yc, 0x8b
+    0x40: Y_mov yb, byte [ya]
+    0x41: Y_add yb, yc
+    0x42: Y_mov byte [ya], yb
+    0x43: Y_mov ya, 0x37
+    0x44: Y_mov yc, 0x60
+    0x45: Y_mov yb, byte [ya]
+    0x46: Y_add yb, yc
+    0x47: Y_mov byte [ya], yb
+    0x48: Y_mov ya, 0x38
+    0x49: Y_mov yc, 0xe5
+    0x4a: Y_mov yb, byte [ya]
+    0x4b: Y_add yb, yc
+    0x4c: Y_mov byte [ya], yb
+    0x4d: Y_mov ya, 0x39
+    0x4e: Y_mov yc, 0xfe
+    0x4f: Y_mov yb, byte [ya]
+    0x50: Y_add yb, yc
+    0x51: Y_mov byte [ya], yb
+    0x52: Y_mov ya, 0x3a
+    0x53: Y_mov yc, 0xf3
+    0x54: Y_mov yb, byte [ya]
+    0x55: Y_add yb, yc
+    0x56: Y_mov byte [ya], yb
+    0x57: Y_mov ya, 0x3b
+    0x58: Y_mov yc, 0x9
+    0x59: Y_mov yb, byte [ya]
+    0x5a: Y_add yb, yc
+    0x5b: Y_mov byte [ya], yb
+    0x5c: Y_mov ya, 0x3c
+    0x5d: Y_mov yc, 0xd1
+    0x5e: Y_mov yb, byte [ya]
+    0x5f: Y_add yb, yc
+    0x60: Y_mov byte [ya], yb
+    0x61: Y_mov ya, 0x3d
+    0x62: Y_mov yc, 0xad
+    0x63: Y_mov yb, byte [ya]
+    0x64: Y_add yb, yc
+    0x65: Y_mov byte [ya], yb
+    0x66: Y_mov ya, 0x3e
+    0x67: Y_mov yc, 0xf
+    0x68: Y_mov yb, byte [ya]
+    0x69: Y_add yb, yc
+    0x6a: Y_mov byte [ya], yb
+    0x6b: Y_mov ya, 0x3f
+    0x6c: Y_mov yc, 0x22
+    0x6d: Y_mov yb, byte [ya]
+    0x6e: Y_add yb, yc
+    0x6f: Y_mov byte [ya], yb
+    0x70: Y_mov ya, 0x40
+    0x71: Y_mov yc, 0xc6
+    0x72: Y_mov yb, byte [ya]
+    0x73: Y_add yb, yc
+    0x74: Y_mov byte [ya], yb
+    0x75: Y_mov ya, 0x41
+    0x76: Y_mov yc, 0xa1
+    0x77: Y_mov yb, byte [ya]
+    0x78: Y_add yb, yc
+    0x79: Y_mov byte [ya], yb
+    0x7a: Y_mov ya, 0x42
+    0x7b: Y_mov yc, 0xcd
+    0x7c: Y_mov yb, byte [ya]
+    0x7d: Y_add yb, yc
+    0x7e: Y_mov byte [ya], yb
+    0x7f: Y_mov ya, 0x43
+    0x80: Y_mov yc, 0x4b
+    0x81: Y_mov yb, byte [ya]
+    0x82: Y_add yb, yc
+    0x83: Y_mov byte [ya], yb
+    0x84: Y_mov ya, 0x44
+    0x85: Y_mov yc, 0xf9
+    0x86: Y_mov yb, byte [ya]
+    0x87: Y_add yb, yc
+    0x88: Y_mov byte [ya], yb
+    0x89: Y_mov ya, 0x45
+    0x8a: Y_mov yc, 0x79
+    0x8b: Y_mov yb, byte [ya]
+    0x8c: Y_add yb, yc
+    0x8d: Y_mov byte [ya], yb
+    0x8e: Y_mov ya, 0x46
+    0x8f: Y_mov yc, 0xad
+    0x90: Y_mov yb, byte [ya]
+    0x91: Y_add yb, yc
+    0x92: Y_mov byte [ya], yb
+    0x93: Y_mov ya, 0x47
+    0x94: Y_mov yc, 0x9a
+    0x95: Y_mov yb, byte [ya]
+    0x96: Y_add yb, yc
+    0x97: Y_mov byte [ya], yb
+    0x98: Y_mov ya, 0x48
+    0x99: Y_mov yc, 0xac
+    0x9a: Y_mov yb, byte [ya]
+    0x9b: Y_add yb, yc
+    0x9c: Y_mov byte [ya], yb
+    0x9d: Y_mov ya, 0x49
+    0x9e: Y_mov yc, 0x96
+    0x9f: Y_mov yb, byte [ya]
+    0xa0: Y_add yb, yc
+    0xa1: Y_mov byte [ya], yb
+    0xa2: Y_mov ya, 0x4a
+    0xa3: Y_mov yc, 0x75
+    0xa4: Y_mov yb, byte [ya]
+    0xa5: Y_add yb, yc
+    0xa6: Y_mov byte [ya], yb
+    0xa7: Y_mov ya, 0x4b
+    0xa8: Y_mov yc, 0xfe
+    0xa9: Y_mov yb, byte [ya]
+    0xaa: Y_add yb, yc
+    0xab: Y_mov byte [ya], yb
+    0xac: Y_pop yc
+    0xad: Y_pop yb
+    0xae: Y_pop ya
+    0xaf: Y_jmp 0xc6
+    0xb0: Y_add ya, yc
+    0xb1: Y_add yb, yc
+    0xb2: Y_mov yd, 0xff
+    0xb3: Y_add ya, yd
+    0xb4: Y_add yb, yd
+    0xb5: Y_push ya
+    0xb6: Y_push yb
+    0xb7: Y_mov ya, byte [ya]
+    0xb8: Y_mov yb, byte [yb]
+    0xb9: Y_cmp ya, yb
+    0xba: Y_pop yb
+    0xbb: Y_pop ya
+    0xbc: Y_mov yd, 0xc4
+    0xbd: Y_jne yd
+    0xbe: Y_mov yd, 0xff
+    0xbf: Y_add yc, yd
+    0xc0: Y_mov yd, 0x0
+    0xc1: Y_cmp yc, yd
+    0xc2: Y_mov yd, 0xb2
+    0xc3: Y_jne yd
+    0xc4: Y_mov yd, yc
+    0xc5: Y_pop yip
+    0xc6: Y_mov ya, 0x30
+    0xc7: Y_mov yb, 0x92
+    0xc8: Y_mov yc, 0x1c
+    0xc9: Y_mov yd, 0x2
+    0xca: Y_add yd, yip
+    0xcb: Y_push yd
+    0xcc: Y_jmp 0xb0
+    0xcd: Y_mov yc, 0x0
+    0xce: Y_cmp yd, yc
+    0xcf: Y_mov yd, 0x8
+    0xd0: Y_je yd
+    0xd1: Y_mov yd, 0x2
+    0xd2: Y_jne yd
+    0xd3: Y_mov yb, 0xd4
+    0xd4: Y_mov yc, 0x5
+    0xd5: Y_mov ya, 0x1
+    0xd6: Y_sys [sys_write] --> yd
+    0xd7: Y_push ya
+    0xd8: Y_push yb
+    0xd9: Y_push yc
+    0xda: Y_mov yb, 0x30
+    0xdb: Y_mov yc, 0x22
+    0xdc: Y_mov ya, 0x0
+    0xdd: Y_sys [sys_read] --> yd
+    0xde: Y_pop yc
+    0xdf: Y_pop yb
+    0xe0: Y_pop ya
+    0xe1: Y_jmp 0x1d
+.MEMORY 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001cb485d2f7f8ec0c72cd71d90a11056aef6717df90c054cac03cfdeb2b8540e52acc434f525245435421204865726520697320796f757220666c61673a0a494e434f5252454354214b45593a202f666c616700000000000000000000000000000000000000000000000000000000000000000000
