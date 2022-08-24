@@ -18,6 +18,7 @@ Debugger Usage: `python[3] yandb.py <asm_filename>`
 - babyrev 16.0
 - babyrev 16.1
 - babyrev 17.0
+- babyrev 17.1
 
 # Issues
 This disassembler also disassembles some x64 instructions, to figure out the stripped binaries (challenges ending in .1).
