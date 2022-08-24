@@ -1,17 +1,21 @@
+import argparse
+import os
 import sys
 import subprocess
 
-from readyan import disassemble_full
+from readyan import disassemble_full, get_opcode_layout
 from instructions import known_instructions
 from lib_func import *
 import lib_func
 
-if len(sys.argv) != 2:
-    print("Usage: python[3] yan85decompile.py <filename>")
-    sys.exit(-1)
+parser = argparse.ArgumentParser(description="yan85 disassembler")
+parser.add_argument("-d", help="Dump randomized flags, registers, syscalls, instructions, opcodes to file. Only available for full yan85", metavar="dumpfile")
+parser.add_argument("-i", help="This yan85 program reads code from the user instead of from the binary. Full yan85 is assumed", action="store_true")
+parser.add_argument("filename")
+args = parser.parse_args()
 
-f = open(sys.argv[1], "rb")
-
+f = open(args.filename, "rb")
+dumpfile = open(args.d, "w") if args.d else open(os.devnull, "w")
 
 cur = b""
 cur_func = []
@@ -65,6 +69,11 @@ while True:
     if "execute_program" in well_known_funcs:
         print("[i] Detected: Basic yan85 emulation")
         break
+    # Reached end of VM, time to exit
+    if args.i and "interpreter_loop" in well_known_funcs:
+        print("[i] End of VM.")
+        get_opcode_layout()
+        sys.exit(0)
   if len(cur) > 10:
     print(f"Aborting: unrecognized instruction at offset {hex(f.tell()-len(cur))}")
     for inst in cur_func:

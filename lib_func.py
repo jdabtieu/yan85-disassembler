@@ -2,6 +2,7 @@ import re
 from struct import unpack
 import sys
 
+
 """
 Ways to fingerprint a function
 1. Number of instructions (less reliable)
@@ -10,6 +11,7 @@ Ways to fingerprint a function
 3. First X instructions (less reliable)
 """
 def find_well_known_funcs(cur_func, cur_func_start, well_known_funcs, file):
+    import yan85decompile
     calls = []
     for inst in cur_func:
         if inst[0].startswith("call"):
@@ -126,6 +128,8 @@ def find_well_known_funcs(cur_func, cur_func_start, well_known_funcs, file):
         for inst in cur_func:
             if inst[0].startswith("cmp byte [rbp"):
                 VM_regs[int(inst[0].split(",")[1], 16)] = regs[i]
+                print(f'[i] {inst[0].split(",")[1].strip()}: {regs[i]}')
+                yan85decompile.dumpfile.write(f'.REGISTER {regs[i]} {inst[0].split(",")[1].strip()}\n')
                 i += 1
         
         # Back to normal decoding
@@ -314,20 +318,25 @@ def find_well_known_funcs(cur_func, cur_func_start, well_known_funcs, file):
             if cur_func[i+1][0].startswith("jae"): # jl
                 VM_jumps["jl"] = key
                 VM_jumps[key] = "jl"
+                yan85decompile.dumpfile.write(f'.FLAG lt {hex(key)}\n')
             elif cur_func[i+1][0].startswith("jbe"): # jg
                 VM_jumps["jg"] = key
                 VM_jumps[key] = "jg"
+                yan85decompile.dumpfile.write(f'.FLAG gt {hex(key)}\n')
             elif cur_func[i+1][0].startswith("jne") and cur_func[i+3][0].startswith("jne"): # jbz
                 VM_jumps["jbz"] = key
                 VM_jumps[key] = "jbz"
+                yan85decompile.dumpfile.write(f'.FLAG bz {hex(key)}\n')
             elif cur_func[i+1][0].startswith("jne") and not cur_func[i-1][0].startswith("jne"): # je
                 VM_jumps["je"] = key
                 VM_jumps[key] = "je"
+                yan85decompile.dumpfile.write(f'.FLAG eq {hex(key)}\n')
             elif cur_func[i+1][0].startswith("jne"): # jbz second cmp
                 pass
             elif cur_func[i+1][0].startswith("je"): # jne
                 VM_jumps["jne"] = key
                 VM_jumps[key] = "jne"
+                yan85decompile.dumpfile.write(f'.FLAG ne {hex(key)}\n')
             else: raise Exception("Unknown jump " + cur_func[i+1][0])
         VM_jumps["jge"] = VM_jumps["je"] | VM_jumps["jg"]
         VM_jumps[VM_jumps["je"] | VM_jumps["jg"]] = "jge"
@@ -344,7 +353,7 @@ def find_well_known_funcs(cur_func, cur_func_start, well_known_funcs, file):
         cur_func.append(('reg2 <-- REGISTER_ID2', 0))
         for key, value in VM_jumps.items():
             if type(key) == int:
-                cur_func.append((f'yflags[{key}] = {value}', 0))
+                cur_func.append((f'yflags[{hex(key)}] = {value}', 0))
         cur_func.append(('\n', 0))
         return True, None
     
@@ -394,20 +403,22 @@ def find_well_known_funcs(cur_func, cur_func_start, well_known_funcs, file):
                     if syscall_name == '' and asm[j][0].startswith('call'):
                         syscall_name = asm[j][0].split(' ')[1]
                     if syscall_name != '' and asm[j][0].startswith('and'):
-                        syscall_num = asm[j][0].split(',')[1]
+                        syscall_num = asm[j][0].split(',')[1].strip()
                         break
                     j -= 1
                 VM_syscalls[int(syscall_num)] = 'sys_' + syscall_name
                 cur_func.append((f'{syscall_num}\tsys_{syscall_name}', 0))
+                yan85decompile.dumpfile.write(f'.SYSCALL {syscall_name} {syscall_num}\n')
             if asm[i][0] == 'call exit':
                 j = i - 1
                 while True:
                     if asm[j][0].startswith('and'):
-                        syscall_num = asm[j][0].split(',')[1]
+                        syscall_num = asm[j][0].split(',')[1].strip()
                         break
                     j -= 1
                 VM_syscalls[int(syscall_num)] = 'sys_exit'
                 cur_func.append((f'{syscall_num}\tsys_exit\n', 0))
+                yan85decompile.dumpfile.write(f'.SYSCALL exit {syscall_num}\n')
         return True, None
     
     # void interpret_instruction(int inst)
@@ -438,6 +449,7 @@ def find_well_known_funcs(cur_func, cur_func_start, well_known_funcs, file):
             func_name = cur_func[i][0].split("call ")[1]
             VM_inst[key] = func_name
             VM_inst[func_name] = key
+            yan85decompile.dumpfile.write(f'.INST {func_name} {hex(key)}\n')
         
         # Back to regular execution
         well_known_funcs['interpret_instruction'] = cur_func_start

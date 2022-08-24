@@ -18,6 +18,8 @@ class Yan85:
                     for i in range(len(line)//2):
                         self.init_mem[i] = int(line[2*i:2*i+2], 16)
                     continue
+                elif line.startswith("."):
+                    continue # we don't care about other directives
                 # Remove comments, starting with ;
                 line = re.sub(r";.+$", "", line)
                 # Remove empty lines
@@ -39,6 +41,9 @@ class Yan85:
             else:
                 print(" " + colored(flag, "green"), end='')
         print()
+        if self.exited:
+            print(colored("Not running", "red"))
+            return
         print(colored("[-------------------------------------code-------------------------------------]", "blue"))
         for i in range(max(0, self.reg["yip"]-3), self.reg["yip"]):
             print(hex(i).rjust(8) + ": " + self.prog[i])
@@ -101,10 +106,7 @@ class Yan85:
         args = [x.strip() for x in args.split(",")]
         if args[0] in self.reg and re.fullmatch(r"(0x[a-fA-F0-9]+)|(\d+)", args[1]):
             # Y_mov r8, imm8
-            if args[1].startswith("0x"):
-                self.reg[args[0]] = int(args[1], 16)
-            else:
-                self.reg[args[0]] = int(args[1])
+            self.reg[args[0]] = int(args[1], 0)
             if args[0] == 'yip': self.reg[args[0]] -= 1
             return True
         if args[0] in self.reg and args[1] in self.reg:
@@ -183,10 +185,7 @@ class Yan85:
         args = [x.strip() for x in args.split(",")]
         if re.fullmatch(r"(0x[a-fA-F0-9]+)|(\d+)", args[0]):
             # Y_jmp imm8
-            if args[0].startswith("0x"):
-                self.reg["yip"] = int(args[0], 16) - 1
-            else:
-                self.reg["yip"] = int(args[0]) - 1
+            self.reg["yip"] = int(args[0], 0) - 1
             return True
         if args[0] in self.reg:
             # Y_jmp r8
@@ -272,26 +271,29 @@ class Yan85:
                 x = self.fd[fd].read(rlen)
             for i in range(len(x)):
                 self.mem[buf+i] = x[i]
+            self.reg[dst] = len(x)
             return True
         if sys_name == "sys_write":
             fd = self.reg["ya"]
             buf = self.reg["yb"]
             rlen = self.reg["yc"]
             self.fd[fd].write(bytes(self.mem[buf:buf+rlen]))
+            self.reg[dst] = rlen
             return True
         if sys_name == "sys_open":
             ptr = self.reg["ya"]
             filename = b''
             while True:
                 x = self.mem[ptr]
-                if x == b'\x00': break
-                filename += x
+                if x == 0x00: break
+                filename += x.to_bytes(1, 'little')
                 ptr += 1
             filename = filename.decode("utf-8")
             if filename == "/flag":
                 self.fd.append(io.BytesIO(b"pwn.college{practice}"))
             else:
                 self.fd.append(open(filename, 'rb'))
+            self.reg[dst] = len(self.fd) - 1
             return True
         return False
 

@@ -10,6 +10,7 @@ _A1 = 0
 _A2 = 2
 
 def get_opcode_layout():
+    import yan85decompile
     func = lib_func.VM_interpret_imm
     ptr = 0
     for i in range(len(func)):
@@ -55,6 +56,9 @@ def get_opcode_layout():
     print(f"[i] Byte {_OP} = opcode")
     print(f"[i] Byte {_A1} = arg1")
     print(f"[i] Byte {_A2} = arg2")
+    yan85decompile.dumpfile.write(f'.ABI OP {_OP}\n')
+    yan85decompile.dumpfile.write(f'.ABI ARG1 {_A1}\n')
+    yan85decompile.dumpfile.write(f'.ABI ARG2 {_A2}\n')
 
 def disassemble_full(cur_func, VM_code, VM_code_len, VM_mem, file):
     get_opcode_layout()
