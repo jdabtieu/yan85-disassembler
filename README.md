@@ -1,24 +1,18 @@
-# yan85 disassembler & debugger
-Decompiles yan85 VM instructions into x64-like NASM Assembly. Debugger provides a gdb-peda like experience with debugging yan85 assembly files.
+# yan85 tools
+- Disassembler: disassembles yan85 VM instructions into x64-like NASM Assembly
+- Debugger: Provides a gdb-peda like basic debugger for debugging yan85 assembly files
+- Assembler: Assembles yan85 assembly into bytecode (no jumps)
 
-This disassembler supports both the "basic" and "full" yan85 emulation levels, but is only fully tested for the levels listed below.
+The disassembler supports both the "basic" and "full" yan85 emulation levels, in the babyrev series. Specifically, it can disassemble levels 12.0-18.1, inclusive. For levels 19.0 and 19.1, only the assembler will be helpful.
 
-Decompiler Usage: `python[3] yan85decompile.py <filename>`<br>
-Debugger Usage: `python[3] yandb.py <asm_filename>`
+Decompiler Usage: `python[3] yan85decompile.py [-h] [-d dumpfile] [-i] filename`<br>
+Use the `-d` flag to dump the randomized components into an asmfile for debugging and assembly purposes.<br>
+Use the `-i` flag for levels where you have to supply yan85 code to be run. If you fail to specify this flag, disassembly will fail with an unknown instruction error.
 
-## List of tested and valid challenges
-- babyrev 12.0
-- babyrev 12.1
-- babyrev 13.0
-- babyrev 13.1
-- babyrev 14.0
-- babyrev 14.1
-- babyrev 15.0
-- babyrev 15.1
-- babyrev 16.0
-- babyrev 16.1
-- babyrev 17.0
-- babyrev 17.1
+Debugger Usage: `python[3] yandb.py asm_filename`
+
+Assembler Usage: `python[3] yanas.py [-h] [-o file] filename`
+Use the `-o` flag to output the bytecode to a file, otherwise, write to stdout.
 
 # Issues
 This disassembler also disassembles some x64 instructions, to figure out the stripped binaries (challenges ending in .1).
@@ -27,6 +21,8 @@ It only contains the opcodes necessary to disassemble the provided binaries, and
 - You get a fatal error while disassembling
 - The registers / jumps make no sense (e.g. `mov yip, yflags`)
 - There are significant chunks of native x64 instructions in `execute_program` and functions marked as `unknown unknown(unknown unknown...)`
+
+The assembler doesn't support jumps at this time, because it's not required for any of the babyrev challenges. This may be added in the future.
 
 Please submit an issue in the Issue tab, along with the full traceback if printed and either the binary or a objdump of it (`objdump -M intel -d`)
 
@@ -73,13 +69,13 @@ The yan85 architecture sets 5 flags in each `cmp`. These results can then be use
 | sys       | Performs a syscall with up to 3 parameters, stored in ra, rb, rc. The syscall<br>performed is the x64 syscall with rax = sys_id, and the return value of the<br>syscall is stored in r8.                                                                                                              | mov eax, sys_id<br>movzx edi, ra<br>movzx esi, rb<br>movzx edx, rc<br>syscall<br>mov r8, al | sys_id      | r8       |
 
 ### Undocumented Instructions
-These are instructions not officially supported by the yan85 emulators, but are available in the debugger for quality of life
+These are instructions not included by the yan85 emulators, but are available in the debugger for quality of life purposes. It is not available in the assembler.
 | Name      | Description                                                                                                                                                                                                                                                                                           | x64 Equivalent                                                                              | Param 1     | Param 2  |
 |-----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|-------------|----------|
 | sub       | Subtracts the src register from the dst register                                                                                                                                                                                                                                                                | sub dst, src                                                                     | r8 (dst)    | r8 (src) |
 
 # Assembly File
-The disassembler generates assembly code, which can optionally be pasted into an assembly file. Right after the line `[i] VM_code_len: XXX`, the assembly file will start.
+The disassembler generates assembly code, which can optionally be pasted into an assembly file. Right after the line `[i] VM_code_len: XXX`, the assembly code will start.
 
 Assembly format:
 - One instruction per line
@@ -87,6 +83,7 @@ Assembly format:
 - Labels (and addresses) at the start of a line are ignored
 - Comments begin with a `;`
 - All jumps are absolute (e.g. `jne 0x51`)
-- To specify starting memory, put `.MEMORY` at the start of a line, followed by a space, followed by up to 256 hex bytes (e.g. `.MEMORY 0001afbdee`)
+- To specify starting memory, put `.MEMORY` at the start of a line, followed by a space, followed by up to 256 hex bytes (e.g. `.MEMORY 0001afbdee`). This is used in the debugger only.
+- All other directives (`.REGISTER, .FLAG, .SYSCALL, .INST, .ABI`) are in the format `.DIRECTIVE name value`. These are used in the assembler only.
 
 A sample assembly file is in [sample.asm](sample.asm)
