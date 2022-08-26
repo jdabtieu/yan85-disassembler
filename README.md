@@ -5,6 +5,8 @@
 
 The disassembler supports both the "basic" and "full" yan85 emulation levels, in the babyrev series. Specifically, it can disassemble levels 12.0-18.1, inclusive. For levels 19.0 and 19.1, only the assembler will be helpful.
 
+Yan85 shows up again in the toddlerone series. The executable format is a bit different, and I didn't bother to update the disassembler to support it. However, the assembler will still do your bidding for these levels (except yan85_64).
+
 Decompiler Usage: `python[3] yan85decompile.py [-h] [-d dumpfile] [-i] filename`<br>
 Use the `-d` flag to dump the randomized components into an asmfile for debugging and assembly purposes.<br>
 Use the `-i` flag for levels where you have to supply yan85 code to be run. If you fail to specify this flag, disassembly will fail with an unknown instruction error.
