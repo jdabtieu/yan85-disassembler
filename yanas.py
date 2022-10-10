@@ -66,14 +66,14 @@ class Yan85Asm:
         if args[0].startswith('byte[') and args[1] in self.reg:
             # Y_mov byte [r8], r8
             ret[self.op] = self.inst["interpret_stm"]
-            ret[self.arg1] = self.reg[args[0]]
+            ret[self.arg1] = self.reg[args[0].split("[")[1].split("]")[0]]
             ret[self.arg2] = self.reg[args[1]]
             return ret
         if args[1].startswith('byte[') and args[0] in self.reg:
             # Y_mov r8, byte [r8]
             ret[self.op] = self.inst["interpret_ldm"]
             ret[self.arg1] = self.reg[args[0]]
-            ret[self.arg2] = self.reg[args[1]]
+            ret[self.arg2] = self.reg[args[1].split("[")[1].split("]")[0]]
             return ret
         print("Unrecognized instruction: Y_mov " + str(args))
         sys.exit(-1)
