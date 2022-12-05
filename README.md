@@ -3,7 +3,7 @@
 - Debugger: Provides a gdb-peda like basic debugger for debugging yan85 assembly files
 - Assembler: Assembles yan85 assembly into bytecode (no jumps)
 
-The disassembler supports both the "basic" and "full" yan85 emulation levels, in the babyrev series. Specifically, it can disassemble levels 12.0-18.1, inclusive. For levels 19.0 and 19.1, only the assembler will be helpful.
+The disassembler supports both the "basic" and "full" yan85 emulation levels, in the babyrev series of the F2021 Archive dojo. Specifically, it can disassemble levels 12.0-18.1, inclusive. For levels 19.0 and 19.1, only the assembler will be helpful. For the new dojo, there are more challenges where this tool may be useful.
 
 Yan85 shows up again in the toddlerone series. The executable format is a bit different, and I didn't bother to update the disassembler to support it. However, the assembler will still do your bidding for these levels (except yan85_64).
 
@@ -27,9 +27,6 @@ It only contains the opcodes necessary to disassemble the provided binaries, and
 The assembler doesn't support jumps at this time, because it's not required for any of the babyrev challenges. This may be added in the future.
 
 Please submit an issue in the Issue tab, along with the full traceback if printed and either the binary or a objdump of it (`objdump -M intel -d`)
-
-# Cheating?
-If you work at ASU and would like me to take down this repo, please submit an issue stating so and I will remove it.
 
 # The yan85 architecture
 The architecture does not specify an exact bit/byte offset for registers and flags, so the ~~very evil~~ problem setters randomize these offsets between different challenges, meaning that they need to be manually located in each binary. In addition, even the opcodes themselves are not fixed, meaning that depending on the challenge, opcodes can be in the order `[arg1][inst][arg2]`, or something else, like `[arg2][inst][arg1]`.
