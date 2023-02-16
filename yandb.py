@@ -33,7 +33,8 @@ class Yan85:
     def print_data(self):
         print(colored("[----------------------------------registers-----------------------------------]", "blue"))
         for reg, val in self.reg.items():
-            print(colored(reg.ljust(4), "green") + ": " + hex(val))
+            value_str = f" ('{chr(val)}')" if 32 <= val < 128 else ""
+            print(colored(reg.ljust(4), "green") + ": " + hex(val) + value_str)
         print(colored("flags", "green") + ":", end='')
         for flag, val in self.flags.items():
             if val:
@@ -298,13 +299,13 @@ class Yan85:
         return False
 
 os.system("color")
-print("yandb v0.1.0 by jdabtieu")
+print("yandb v0.1.1 by jdabtieu")
 if len(sys.argv) == 2:
     print(f"Loading file {sys.argv[1]}...")
     file = Yan85(sys.argv[1])
     print(f"Loaded file {sys.argv[1]}!")
 else:
-    print("Usage: python[3] yan85debug.py <filename>")
+    print("Usage: python[3] yandb.py <filename>")
     sys.exit(-1)
 print("Type 'help' for help")
 print("Using gdb-peda shorthand syntax")
