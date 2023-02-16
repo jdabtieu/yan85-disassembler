@@ -26,7 +26,7 @@ class Yan85Asm:
             self.prog.append(line)
     
     def parse_directive(self, line):
-        tokens = line.split(" ")
+        tokens = [x.strip() for x in line.split()]
         if tokens[0] == "REGISTER":
             self.reg[tokens[1]] = int(tokens[2], 0)
         elif tokens[0] == "FLAG":
@@ -37,6 +37,8 @@ class Yan85Asm:
             self.inst[tokens[1]] = int(tokens[2], 0)
         elif tokens[0] == "ABI":
             setattr(self, tokens[1].lower(), int(tokens[2], 0))
+        elif tokens[0] == "MEMORY":
+            print("Ignoring .MEMORY directive")
         else:
             print("Unrecognized directive: " + line)
             sys.exit(-1)
